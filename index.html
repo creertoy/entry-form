@@ -154,7 +154,7 @@ const emergency = params.get("emergency") === "1";
 
 // 有効期限チェック
 if (!emergency && (!expire || Date.now() > expire)) {
-  document.getElementById("error").style.display = "block";
+document.getElementById("error").style.display = "block";
 } else {
   document.getElementById("formWrap").style.display = "block";
   document.getElementById("tokenInput").value = emergency ? "emergency" : String(expire);
