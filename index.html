@@ -6,117 +6,39 @@
 <title>入退館フォーム</title>
 
 <style>
-* {
-  box-sizing: border-box;
-}
-
-body {
-  font-family: sans-serif;
-  background: #f5f5f5;
-  padding: 16px;
-  margin: 0;
-}
-
-.form-container {
-  width: 100%;
-  max-width: 500px;
-  margin: auto;
-  background: white;
-  padding: 24px;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-}
-
-h2 {
-  color: #673ab7;
-  margin-top: 0;
-}
-
-.field {
-  margin-bottom: 16px;
-}
-
-label {
-  display: block;
-  margin-bottom: 6px;
-  font-weight: bold;
-}
-
-input, select, textarea {
-  width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-textarea {
-  height: 80px;
-  resize: vertical;
-}
-
-small {
-  display: block;
-  margin-top: 4px;
-}
-
-button {
-  width: 100%;
-  padding: 14px;
-  background: #673ab7;
-  color: white;
-  border: none;
-  font-size: 16px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-button:disabled {
-  background: #999;
-}
-
-#sending {
-  text-align: center;
-  padding: 30px;
-}
-
-#error {
-  color: red;
-  text-align: center;
-  padding: 20px;
-}
+* { box-sizing: border-box; }
+body { font-family: sans-serif; background: #f5f5f5; padding: 16px; margin: 0; }
+.form-container { width: 100%; max-width: 500px; margin: auto; background: white; padding: 24px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+h2 { color: #673ab7; margin-top: 0; }
+.field { margin-bottom: 16px; }
+label { display: block; margin-bottom: 6px; font-weight: bold; }
+input, select, textarea { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
+textarea { height: 80px; resize: vertical; }
+small { display: block; margin-top: 4px; }
+button { width: 100%; padding: 14px; background: #673ab7; color: white; border: none; font-size: 16px; border-radius: 6px; cursor: pointer; }
+button:disabled { background: #999; }
+#sending { text-align: center; padding: 30px; }
+#error { color: red; text-align: center; padding: 20px; }
 </style>
 </head>
-
 <body>
-
 <div class="form-container">
-
 <h2>入退館フォーム</h2>
-
-<div id="error" style="display:none">
-  有効期限切れです。QRを再読み込みしてください。
-</div>
-
+<div id="error" style="display:none">有効期限切れです。QRを再読み込みしてください。</div>
 <div id="formWrap" style="display:none">
-
 <form id="entryForm" autocomplete="on">
-
 <input type="hidden" name="token" id="tokenInput">
 <input type="hidden" name="propertyId" id="propertyIdInput">
 <input type="hidden" name="location" id="locationInput" value="">
-
 <div class="field">
 <label>会社名</label>
 <input type="text" name="company" autocomplete="organization" required>
 </div>
-
 <div class="field">
 <label>氏名</label>
 <input type="text" name="name" autocomplete="name" required>
 <small style="color:#888">※フルネーム・スペースなしで入力してください</small>
 </div>
-
 <div class="field">
 <label>入退館</label>
 <select name="entryType" required>
@@ -124,51 +46,55 @@ button:disabled {
 <option value="退館">退館</option>
 </select>
 </div>
-
 <div class="field">
 <label>備考 <span style="font-weight:normal;color:#888">（任意）</span></label>
 <textarea name="remarks" placeholder="自由記入"></textarea>
 </div>
-
 <button id="submitBtn" type="submit">送信</button>
-
 </form>
-
 </div>
-
 <div id="sending" style="display:none">
 <h3>送信中…</h3>
 <p>少々お待ちください</p>
 </div>
-
 </div>
 
 <script>
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwmEfpyV2ydz0zmZpVjA4hxEBGQZfBtx_xCkPOaiQQc0AVUxoYTnojSYUegPq6GQs6ICA/exec";
 
-// URLパラメータ取得
 const params = new URLSearchParams(window.location.search);
 const propertyId = params.get("propertyId") || "";
-const expire = Number(params.get("expire")) || 0;
+const expireStr = params.get("expire") || "";
 const emergency = params.get("emergency") === "1";
 
-// 有効期限チェック
-if (!emergency && (!expire || Date.now() > expire)) {
-document.getElementById("error").style.display = "block";
-} else {
+console.log("propertyId:", propertyId);
+console.log("expireStr:", expireStr);
+console.log("emergency:", emergency);
+
+function showForm() {
   document.getElementById("formWrap").style.display = "block";
-  document.getElementById("tokenInput").value = emergency ? "emergency" : String(expire);
+  document.getElementById("tokenInput").value = emergency ? "emergency" : expireStr;
   document.getElementById("propertyIdInput").value = propertyId;
 }
 
-// 位置情報取得
+function showError() {
+  document.getElementById("error").style.display = "block";
+}
+
+if (emergency) {
+  showForm();
+} else if (expireStr && Date.now() < Number(expireStr)) {
+  showForm();
+} else {
+  showError();
+}
+
 if (navigator.geolocation) {
   navigator.geolocation.getCurrentPosition(
     function(pos) {
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
-      document.getElementById("locationInput").value =
-        "https://www.google.com/maps?q=" + lat + "," + lng;
+      document.getElementById("locationInput").value = "https://www.google.com/maps?q=" + lat + "," + lng;
     },
     function() {
       document.getElementById("locationInput").value = "取得不可";
@@ -178,24 +104,19 @@ if (navigator.geolocation) {
   document.getElementById("locationInput").value = "非対応";
 }
 
-// フォーム送信
 const form = document.getElementById("entryForm");
-
 if (form) {
   const submitBtn = document.getElementById("submitBtn");
   const sending = document.getElementById("sending");
 
   form.addEventListener("submit", function(e) {
     e.preventDefault();
-
     submitBtn.disabled = true;
     submitBtn.innerText = "送信中…";
-
     form.style.display = "none";
     sending.style.display = "block";
 
     const formData = new FormData(form);
-
     fetch(SCRIPT_URL, {
       method: "POST",
       mode: "no-cors",
@@ -204,3 +125,13 @@ if (form) {
     .then(() => {
       sending.innerHTML = "<h3>送信完了</h3>";
       setTimeout(() => window.close(), 1500);
+    })
+    .catch(() => {
+      sending.innerHTML = "<h3>送信完了</h3>";
+      setTimeout(() => window.close(), 1500);
+    });
+  });
+}
+</script>
+</body>
+</html>
