@@ -19,6 +19,7 @@ button { width: 100%; padding: 14px; background: #673ab7; color: white; border: 
 button:disabled { background: #999; }
 #sending { text-align: center; padding: 30px; }
 #error { color: red; text-align: center; padding: 20px; }
+#locationError { display:none; color: red; font-size: 14px; margin-bottom: 12px; }
 </style>
 </head>
 <body>
@@ -50,6 +51,7 @@ button:disabled { background: #999; }
 <label>備考 <span style="font-weight:normal;color:#888">（任意）</span></label>
 <textarea name="remarks" placeholder="自由記入"></textarea>
 </div>
+<div id="locationError">位置情報を許可してから再度お試しください。</div>
 <button id="submitBtn" type="submit">送信</button>
 </form>
 </div>
@@ -66,10 +68,6 @@ const params = new URLSearchParams(window.location.search);
 const propertyId = params.get("propertyId") || "";
 const expireStr = params.get("expire") || "";
 const emergency = params.get("emergency") === "1";
-
-console.log("propertyId:", propertyId);
-console.log("expireStr:", expireStr);
-console.log("emergency:", emergency);
 
 function showForm() {
   document.getElementById("formWrap").style.display = "block";
@@ -89,28 +87,41 @@ if (emergency) {
   showError();
 }
 
+let locationOk = false;
+
 if (navigator.geolocation) {
   navigator.geolocation.getCurrentPosition(
     function(pos) {
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
       document.getElementById("locationInput").value = "https://www.google.com/maps?q=" + lat + "," + lng;
+      locationOk = true;
     },
     function() {
       document.getElementById("locationInput").value = "取得不可";
+      locationOk = false;
     }
   );
 } else {
   document.getElementById("locationInput").value = "非対応";
+  locationOk = false;
 }
 
 const form = document.getElementById("entryForm");
 if (form) {
   const submitBtn = document.getElementById("submitBtn");
   const sending = document.getElementById("sending");
+  const locationError = document.getElementById("locationError");
 
   form.addEventListener("submit", function(e) {
     e.preventDefault();
+
+    if (!locationOk) {
+      locationError.style.display = "block";
+      return;
+    }
+
+    locationError.style.display = "none";
     submitBtn.disabled = true;
     submitBtn.innerText = "送信中…";
     form.style.display = "none";
