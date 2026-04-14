@@ -87,24 +87,19 @@ if (emergency) {
   showError();
 }
 
-let locationOk = false;
-
 if (navigator.geolocation) {
   navigator.geolocation.getCurrentPosition(
     function(pos) {
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
       document.getElementById("locationInput").value = "https://www.google.com/maps?q=" + lat + "," + lng;
-      locationOk = true;
     },
     function() {
       document.getElementById("locationInput").value = "取得不可";
-      locationOk = false;
     }
   );
 } else {
   document.getElementById("locationInput").value = "非対応";
-  locationOk = false;
 }
 
 const form = document.getElementById("entryForm");
@@ -112,16 +107,18 @@ if (form) {
   const submitBtn = document.getElementById("submitBtn");
   const sending = document.getElementById("sending");
   const locationError = document.getElementById("locationError");
+  const locationInput = document.getElementById("locationInput");
 
   form.addEventListener("submit", function(e) {
     e.preventDefault();
 
-    if (!locationOk) {
+    const loc = locationInput.value;
+    if (loc === "取得不可" || loc === "" || loc === "非対応") {
       locationError.style.display = "block";
-      return;
+    } else {
+      locationError.style.display = "none";
     }
 
-    locationError.style.display = "none";
     submitBtn.disabled = true;
     submitBtn.innerText = "送信中…";
     form.style.display = "none";
