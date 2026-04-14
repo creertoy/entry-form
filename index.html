@@ -19,7 +19,6 @@ button { width: 100%; padding: 14px; background: #673ab7; color: white; border: 
 button:disabled { background: #999; }
 #sending { text-align: center; padding: 30px; }
 #error { color: red; text-align: center; padding: 20px; }
-#locationError { display:none; color: red; font-size: 14px; margin-bottom: 12px; }
 </style>
 </head>
 <body>
@@ -51,13 +50,14 @@ button:disabled { background: #999; }
 <label>備考 <span style="font-weight:normal;color:#888">（任意）</span></label>
 <textarea name="remarks" placeholder="自由記入"></textarea>
 </div>
-<div id="locationError">位置情報を許可してから再度お試しください。</div>
 <button id="submitBtn" type="submit">送信</button>
 </form>
 </div>
 <div id="sending" style="display:none">
-<h3>送信中…</h3>
-<p>少々お待ちください</p>
+<h3>送信完了</h3>
+<div id="locationError" style="display:none; color:red; font-size:14px; margin-top:12px;">
+  ⚠️ 位置情報を許可してから再度お試しください。
+</div>
 </div>
 </div>
 
@@ -106,18 +106,13 @@ const form = document.getElementById("entryForm");
 if (form) {
   const submitBtn = document.getElementById("submitBtn");
   const sending = document.getElementById("sending");
-  const locationError = document.getElementById("locationError");
   const locationInput = document.getElementById("locationInput");
 
   form.addEventListener("submit", function(e) {
     e.preventDefault();
 
     const loc = locationInput.value;
-    if (loc === "取得不可" || loc === "" || loc === "非対応") {
-      locationError.style.display = "block";
-    } else {
-      locationError.style.display = "none";
-    }
+    const locationFailed = loc === "取得不可" || loc === "" || loc === "非対応";
 
     submitBtn.disabled = true;
     submitBtn.innerText = "送信中…";
@@ -131,12 +126,20 @@ if (form) {
       body: formData
     })
     .then(() => {
-      sending.innerHTML = "<h3>送信完了</h3>";
-      setTimeout(() => window.close(), 1500);
+      if (locationFailed) {
+        sending.innerHTML = "<h3>送信完了</h3><p style='color:red;font-size:14px;'>⚠️ 位置情報を許可してから再度お試しください。</p>";
+      } else {
+        sending.innerHTML = "<h3>送信完了</h3>";
+      }
+      setTimeout(() => window.close(), 3000);
     })
     .catch(() => {
-      sending.innerHTML = "<h3>送信完了</h3>";
-      setTimeout(() => window.close(), 1500);
+      if (locationFailed) {
+        sending.innerHTML = "<h3>送信完了</h3><p style='color:red;font-size:14px;'>⚠️ 位置情報を許可してから再度お試しください。</p>";
+      } else {
+        sending.innerHTML = "<h3>送信完了</h3>";
+      }
+      setTimeout(() => window.close(), 3000);
     });
   });
 }
