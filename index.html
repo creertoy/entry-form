@@ -19,6 +19,7 @@ button { width: 100%; padding: 14px; background: #673ab7; color: white; border: 
 button:disabled { background: #999; }
 #sending { text-align: center; padding: 30px; }
 #error { color: red; text-align: center; padding: 20px; }
+#locationNotice { color: red; font-size: 14px; margin-bottom: 10px; }
 </style>
 </head>
 <body>
@@ -50,14 +51,12 @@ button:disabled { background: #999; }
 <label>備考 <span style="font-weight:normal;color:#888">（任意）</span></label>
 <textarea name="remarks" placeholder="自由記入"></textarea>
 </div>
-<button id="submitBtn" type="submit">送信</button>
+<div id="locationNotice">⚠️ 位置情報をONにしてください</div>
+<button id="submitBtn" type="button" disabled>取得中...</button>
 </form>
 </div>
 <div id="sending" style="display:none">
 <h3>送信完了</h3>
-<div id="locationError" style="display:none; color:red; font-size:14px; margin-top:12px;">
-  ⚠️ 位置情報を許可してから再度お試しください。
-</div>
 </div>
 </div>
 
@@ -87,32 +86,39 @@ if (emergency) {
   showError();
 }
 
+const submitBtn = document.getElementById("submitBtn");
+const locationNotice = document.getElementById("locationNotice");
+
 if (navigator.geolocation) {
   navigator.geolocation.getCurrentPosition(
     function(pos) {
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
       document.getElementById("locationInput").value = "https://www.google.com/maps?q=" + lat + "," + lng;
+      submitBtn.disabled = false;
+      submitBtn.innerText = "送信";
+      locationNotice.style.display = "none";
     },
     function() {
       document.getElementById("locationInput").value = "取得不可";
+      submitBtn.disabled = true;
+      submitBtn.innerText = "位置情報をONにしてください";
+      locationNotice.innerHTML = "⚠️ 位置情報が取得できません。<br>設定から位置情報を許可してください。";
     }
   );
 } else {
   document.getElementById("locationInput").value = "非対応";
+  submitBtn.disabled = true;
+  submitBtn.innerText = "位置情報が取得できません";
+  locationNotice.innerHTML = "⚠️ このブラウザは位置情報に対応していません。";
 }
 
 const form = document.getElementById("entryForm");
 if (form) {
-  const submitBtn = document.getElementById("submitBtn");
   const sending = document.getElementById("sending");
-  const locationInput = document.getElementById("locationInput");
 
-  form.addEventListener("submit", function(e) {
-    e.preventDefault();
-
-    const loc = locationInput.value;
-    const locationFailed = loc === "取得不可" || loc === "" || loc === "非対応";
+  submitBtn.addEventListener("click", function() {
+    if (submitBtn.disabled) return;
 
     submitBtn.disabled = true;
     submitBtn.innerText = "送信中…";
@@ -126,20 +132,12 @@ if (form) {
       body: formData
     })
     .then(() => {
-      if (locationFailed) {
-        sending.innerHTML = "<h3>送信完了</h3><p style='color:red;font-size:14px;'>⚠️ 位置情報を許可してから再度お試しください。</p>";
-      } else {
-        sending.innerHTML = "<h3>送信完了</h3>";
-      }
-      setTimeout(() => window.close(), 3000);
+      sending.innerHTML = "<h3>送信完了</h3>";
+      setTimeout(() => window.close(), 1500);
     })
     .catch(() => {
-      if (locationFailed) {
-        sending.innerHTML = "<h3>送信完了</h3><p style='color:red;font-size:14px;'>⚠️ 位置情報を許可してから再度お試しください。</p>";
-      } else {
-        sending.innerHTML = "<h3>送信完了</h3>";
-      }
-      setTimeout(() => window.close(), 3000);
+      sending.innerHTML = "<h3>送信完了</h3>";
+      setTimeout(() => window.close(), 1500);
     });
   });
 }
